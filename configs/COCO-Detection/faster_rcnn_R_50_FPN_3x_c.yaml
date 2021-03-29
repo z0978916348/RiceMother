@@ -1,0 +1,38 @@
+_BASE_: "../Base-RCNN-FPN.yaml"
+MODEL:
+  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  MASK_ON: False
+  RESNETS:
+    DEPTH: 50
+  ROI_HEADS:
+    NUM_CLASSES: 1
+    NMS_THRESH_TEST: 0.25
+    SCORE_THRESH_TEST: 0.8
+  RPN:
+    IN_FEATURES: ["p2", "p3"]
+    PRE_NMS_TOPK_TRAIN: 36000  
+    PRE_NMS_TOPK_TEST: 18000
+    POST_NMS_TOPK_TRAIN: 6000  
+    POST_NMS_TOPK_TEST: 3000
+  ANCHOR_GENERATOR:
+    SIZES: [[20], [40]] # One size for each in feature map
+    ASPECT_RATIOS: [[1.0]]  # Three aspect ratios (same for all in feature maps)
+TEST:
+  DETECTIONS_PER_IMAGE: 1500
+DATASETS:
+  TRAIN: ("train",)
+  # TEST: ("valid",)
+SOLVER:
+  IMS_PER_BATCH: 2
+  BASE_LR: 0.01
+  STEPS: (180000, 230000)
+  MAX_ITER: 250000
+INPUT:
+  CROP: 
+    ENABLED: True
+    TYPE: "absolute"
+    SIZE: [2400, 1600]
+  RANDOM_FLIP: "horizontal"
+  # MIN_SIZE_TRAIN: (512,)
+  
+OUTPUT_DIR: "../outputV2_2400x1600_2_ratio_2bs"

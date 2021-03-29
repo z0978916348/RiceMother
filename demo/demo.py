@@ -6,13 +6,14 @@ import os
 import time
 import cv2
 import tqdm
-
+import numpy as np
 from detectron2.config import get_cfg
 from detectron2.data.detection_utils import read_image
 from detectron2.utils.logger import setup_logger
 
 from predictor import VisualizationDemo
 
+import pandas as pd
 # constants
 WINDOW_NAME = "COCO detections"
 
@@ -90,6 +91,14 @@ if __name__ == "__main__":
             img = read_image(path, format="BGR")
             start_time = time.time()
             predictions, visualized_output = demo.run_on_image(img)
+
+            pred_boxes = predictions["instances"].pred_boxes.tensor.cpu().numpy() # Boxes
+            midPoint = ((pred_boxes[:, [0,1]] + pred_boxes[:, [2,3]]))//2
+            midPoint = midPoint.astype(np.int)
+            path = path.replace(".JPG", "")
+            
+            pd.DataFrame(midPoint).to_csv(f"./{path.split('/')[-1]}.csv", index=False, header=False)
+            
             logger.info(
                 "{}: {} in {:.2f}s".format(
                     path,

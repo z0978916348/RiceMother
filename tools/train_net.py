@@ -15,16 +15,17 @@ Therefore, we recommend you to use detectron2 as an library and take
 this file as an example of how to use the library.
 You may want to write your own script with your datasets and other customizations.
 """
-
 import logging
 import os
 from collections import OrderedDict
 import torch
+import numpy as np
 
+import detectron2.data.transforms as T
 import detectron2.utils.comm as comm
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
-from detectron2.data import MetadataCatalog
+from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, hooks, launch
 from detectron2.evaluation import (
     CityscapesInstanceEvaluator,
@@ -38,8 +39,14 @@ from detectron2.evaluation import (
     verify_results,
 )
 from detectron2.modeling import GeneralizedRCNNWithTTA
+from detectron2.data import DatasetMapper # the default mapper
+from detectron2.data import build_detection_train_loader
+from detection_dict import get_dicts
+from detectron2.data.datasets import register_coco_instances
 
-
+import copy
+from detectron2.data import detection_utils as utils
+from detectron2.structures import BoxMode
 class Trainer(DefaultTrainer):
     """
     We use the "DefaultTrainer" which contains pre-defined default logic for
@@ -113,6 +120,28 @@ class Trainer(DefaultTrainer):
         res = OrderedDict({k + "_TTA": v for k, v in res.items()})
         return res
 
+    # @classmethod
+    # def build_train_loader(cls, cfg):
+        
+    #     def custom_mapper(dataset_dict):
+    #         # Implement a mapper, similar to the default DatasetMapper, but with your own customizations
+    #         dataset_dict = copy.deepcopy(dataset_dict)  # it will be modified by code below
+    #         image = utils.read_image(dataset_dict["file_name"], format="BGR")
+    #         transform_list = [  T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
+    #                              ]
+    #         image, transforms = T.apply_transform_gens(transform_list, image)
+    #         dataset_dict["image"] = torch.as_tensor(image.transpose(2, 0, 1).astype("float32"))
+
+    #         annos = [
+    #             utils.transform_instance_annotations(obj, transforms, image.shape[:2])
+    #             for obj in dataset_dict.pop("annotations")
+    #             if obj.get("iscrowd", 0) == 0
+    #         ]
+    #         instances = utils.annotations_to_instances(annos, image.shape[:2])
+    #         dataset_dict["instances"] = utils.filter_empty_instances(instances)
+    #         return dataset_dict
+
+    #     return build_detection_train_loader(cfg, mapper=custom_mapper)
 
 def setup(args):
     """
@@ -156,7 +185,22 @@ def main(args):
 
 
 if __name__ == "__main__":
+
+    folder_name = '../rice_data'
+    class_names = ["plant"]
+    
+    for dir_ in ["train"]:
+        DatasetCatalog.register(dir_, lambda d = dir_: get_dicts(folder_name + "/" + d))
+        MetadataCatalog.get(dir_).set(thing_classes=class_names, evaluator_type='coco')
+
+    riceMetadata = MetadataCatalog.get("train")
+    riceMetadata.thing_colors = [(255, 0, 0)]
+    
+
     args = default_argument_parser().parse_args()
+
+    args.num_gpu = 1
+
     print("Command Line Args:", args)
     launch(
         main,

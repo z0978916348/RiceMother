@@ -1,0 +1,19 @@
+_BASE_: "../Base-RCNN-FPN.yaml"
+MODEL:
+  META_ARCHITECTURE: "SemanticSegmentor"
+  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  RESNETS:
+    DEPTH: 50
+DATASETS:
+  TRAIN: ("cross1_train_carpaltunnel",)
+  TEST: ("cross1_valid_carpaltunnel",)
+INPUT:
+  MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
+SOLVER:
+  IMS_PER_BATCH: 8
+  BASE_LR: 0.0025
+  STEPS: (210000, 250000)
+  MAX_ITER: 270000
+OUTPUT_DIR: "../Semantic_cross1_T1"
+INPUT:
+  RANDOM_FLIP: "horizontal"
